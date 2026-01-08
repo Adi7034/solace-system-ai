@@ -1,11 +1,12 @@
 import { useState } from 'react';
-import { format, isSameDay, parseISO } from 'date-fns';
+import { format, parseISO } from 'date-fns';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Calendar } from '@/components/ui/calendar';
 import { Button } from '@/components/ui/button';
-import { Droplets, Heart, Moon, X, ChevronLeft } from 'lucide-react';
+import { Droplets, Heart, Moon, ChevronLeft } from 'lucide-react';
 import { usePeriodLogs, PeriodLog } from '@/hooks/usePeriodLogs';
 import { LogEntryForm } from './LogEntryForm';
+import { CyclePrediction } from './CyclePrediction';
 import { cn } from '@/lib/utils';
 
 interface PeriodTrackerProps {
@@ -130,6 +131,11 @@ export function PeriodTracker({ onBack }: PeriodTrackerProps) {
             </div>
           </div>
         </motion.div>
+
+        {/* Cycle Prediction */}
+        {!showForm && (
+          <CyclePrediction logs={logs} />
+        )}
 
         {/* Selected Date Info */}
         <AnimatePresence mode="wait">
