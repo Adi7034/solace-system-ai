@@ -14,7 +14,39 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      period_logs: {
+        Row: {
+          created_at: string
+          flow_intensity: string | null
+          id: string
+          log_date: string
+          moods: string[] | null
+          notes: string | null
+          symptoms: string[] | null
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          flow_intensity?: string | null
+          id?: string
+          log_date: string
+          moods?: string[] | null
+          notes?: string | null
+          symptoms?: string[] | null
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          flow_intensity?: string | null
+          id?: string
+          log_date?: string
+          moods?: string[] | null
+          notes?: string | null
+          symptoms?: string[] | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never

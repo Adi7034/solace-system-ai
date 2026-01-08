@@ -15,7 +15,7 @@ export function useChat() {
     {
       id: 'welcome',
       role: 'assistant',
-      content: "Hi there, I'm Luna 💜 I'm here to support you through whatever you're feeling right now. Whether you're dealing with stress, need some comfort during your period, or just want someone to listen — I'm here for you. How are you feeling today?",
+      content: "Hey babe! 💜 I'm Luna, your new bestie for all things wellness! Whether you're dealing with period drama, stress spirals, or just need someone to chat with — I've got you. No judgment, just good vibes and real talk. So, how are you doing today? ✨",
       timestamp: new Date(),
     },
   ]);
