@@ -1,25 +1,28 @@
 import { motion } from 'framer-motion';
 import { Heart, Wind, Moon, Flower2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { useTranslation } from '@/hooks/useTranslation';
 
 interface QuickActionsProps {
   onSelect: (message: string) => void;
   disabled: boolean;
 }
 
-const actions = [
-  { icon: Wind, label: 'Breathing Exercise', message: "I'd like to do a breathing exercise to calm down" },
-  { icon: Heart, label: 'Stress Relief', message: "I'm feeling stressed and need some support" },
-  { icon: Flower2, label: 'Period Care', message: "I'm on my period and need some comfort tips" },
-  { icon: Moon, label: 'Just Talk', message: "I just need someone to listen right now" },
-];
-
 export function QuickActions({ onSelect, disabled }: QuickActionsProps) {
+  const { t } = useTranslation();
+
+  const actions = [
+    { icon: Wind, labelKey: 'action.breathing', messageKey: 'action.breathing.msg' },
+    { icon: Heart, labelKey: 'action.stress', messageKey: 'action.stress.msg' },
+    { icon: Flower2, labelKey: 'action.period', messageKey: 'action.period.msg' },
+    { icon: Moon, labelKey: 'action.talk', messageKey: 'action.talk.msg' },
+  ];
+
   return (
     <div className="flex flex-wrap gap-2 justify-center">
       {actions.map((action, index) => (
         <motion.div
-          key={action.label}
+          key={action.labelKey}
           initial={{ opacity: 0, scale: 0.9 }}
           animate={{ opacity: 1, scale: 1 }}
           transition={{ delay: index * 0.1 }}
@@ -27,12 +30,12 @@ export function QuickActions({ onSelect, disabled }: QuickActionsProps) {
           <Button
             variant="outline"
             size="sm"
-            onClick={() => onSelect(action.message)}
+            onClick={() => onSelect(t(action.messageKey))}
             disabled={disabled}
             className="gap-2 rounded-full border-rose-200 hover:border-rose-300 hover:bg-rose-50 transition-all"
           >
             <action.icon className="h-4 w-4 text-rose-400" />
-            {action.label}
+            {t(action.labelKey)}
           </Button>
         </motion.div>
       ))}

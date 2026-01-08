@@ -8,11 +8,14 @@ import { ChatMessage } from '@/components/ChatMessage';
 import { ChatInput } from '@/components/ChatInput';
 import { QuickActions } from '@/components/QuickActions';
 import { PeriodTracker } from '@/components/PeriodTracker';
+import { LanguageSwitcher } from '@/components/LanguageSwitcher';
 import { useChat } from '@/hooks/useChat';
 import { useAuth } from '@/hooks/useAuth';
+import { useTranslation } from '@/hooks/useTranslation';
 import { toast } from 'sonner';
 
 const Index = () => {
+  const { t } = useTranslation();
   const { messages, isLoading, isLoadingHistory, sendMessage, clearHistory } = useChat();
   const { user, isLoading: authLoading, signOut } = useAuth();
   const navigate = useNavigate();
@@ -35,7 +38,7 @@ const Index = () => {
 
   const handleSignOut = async () => {
     await signOut();
-    toast.success('See you soon! 💜');
+    toast.success(t('nav.seeYou'));
     navigate('/auth');
   };
 
@@ -67,11 +70,12 @@ const Index = () => {
               <Sparkles className="w-5 h-5 text-primary-foreground" />
             </div>
             <div>
-              <h1 className="font-semibold text-foreground">Luna</h1>
-              <p className="text-xs text-muted-foreground">Your bestie for wellness 💜</p>
+              <h1 className="font-semibold text-foreground">{t('app.name')}</h1>
+              <p className="text-xs text-muted-foreground">{t('app.tagline')}</p>
             </div>
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-1">
+            <LanguageSwitcher />
             <Button 
               variant="outline" 
               size="sm" 
@@ -79,14 +83,14 @@ const Index = () => {
               className="gap-2"
             >
               <Calendar className="w-4 h-4" />
-              <span className="hidden sm:inline">Cycle Tracker</span>
+              <span className="hidden sm:inline">{t('nav.cycleTracker')}</span>
             </Button>
             <Button
               variant="ghost"
               size="sm"
               onClick={clearHistory}
               className="text-muted-foreground"
-              title="Clear chat"
+              title={t('nav.clearChat')}
             >
               <Trash2 className="w-4 h-4" />
             </Button>
@@ -95,7 +99,7 @@ const Index = () => {
               size="sm"
               onClick={handleSignOut}
               className="text-muted-foreground"
-              title="Sign out"
+              title={t('nav.signOut')}
             >
               <LogOut className="w-4 h-4" />
             </Button>

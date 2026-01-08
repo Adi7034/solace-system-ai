@@ -2,6 +2,7 @@ import { useState, useRef, useEffect } from 'react';
 import { Send, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
+import { useTranslation } from '@/hooks/useTranslation';
 
 interface ChatInputProps {
   onSend: (message: string) => void;
@@ -9,6 +10,7 @@ interface ChatInputProps {
 }
 
 export function ChatInput({ onSend, isLoading }: ChatInputProps) {
+  const { t } = useTranslation();
   const [input, setInput] = useState('');
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
@@ -42,7 +44,7 @@ export function ChatInput({ onSend, isLoading }: ChatInputProps) {
         value={input}
         onChange={(e) => setInput(e.target.value)}
         onKeyDown={handleKeyDown}
-        placeholder="Share what's on your mind..."
+        placeholder={t('chat.placeholder')}
         className="resize-none min-h-[48px] max-h-[120px] rounded-2xl bg-muted border-0 focus-visible:ring-2 focus-visible:ring-rose-300"
         rows={1}
         disabled={isLoading}

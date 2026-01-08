@@ -3,12 +3,15 @@ import { format, addDays, differenceInDays, parseISO } from 'date-fns';
 import { motion } from 'framer-motion';
 import { Calendar, TrendingUp, Clock } from 'lucide-react';
 import { PeriodLog } from '@/hooks/usePeriodLogs';
+import { useTranslation } from '@/hooks/useTranslation';
 
 interface CyclePredictionProps {
   logs: PeriodLog[];
 }
 
 export function CyclePrediction({ logs }: CyclePredictionProps) {
+  const { t } = useTranslation();
+
   const prediction = useMemo(() => {
     // Get logs with flow (period days)
     const periodLogs = logs
@@ -79,18 +82,24 @@ export function CyclePrediction({ logs }: CyclePredictionProps) {
             <TrendingUp className="w-5 h-5 text-muted-foreground" />
           </div>
           <div>
-            <h3 className="font-medium text-foreground">Cycle Prediction</h3>
-            <p className="text-xs text-muted-foreground">Track 2+ periods to see predictions</p>
+            <h3 className="font-medium text-foreground">{t('prediction.title')}</h3>
+            <p className="text-xs text-muted-foreground">{t('prediction.trackMore')}</p>
           </div>
         </div>
         <p className="text-sm text-muted-foreground">
-          Log your period days and I'll learn your cycle to predict your next period! 💜
+          {t('prediction.logPeriod')}
         </p>
       </motion.div>
     );
   }
 
   const { avgCycleLength, nextPeriodDate, daysUntil, cyclesTracked } = prediction;
+
+  const getDaysUntilText = () => {
+    if (daysUntil === 0) return t('prediction.today');
+    if (daysUntil < 0) return t('prediction.daysAgo', { count: Math.abs(daysUntil) });
+    return t('prediction.inDays', { count: daysUntil });
+  };
 
   return (
     <motion.div
@@ -103,8 +112,8 @@ export function CyclePrediction({ logs }: CyclePredictionProps) {
           <TrendingUp className="w-5 h-5 text-primary-foreground" />
         </div>
         <div>
-          <h3 className="font-medium text-foreground">Cycle Prediction</h3>
-          <p className="text-xs text-muted-foreground">Based on {cyclesTracked} cycles</p>
+          <h3 className="font-medium text-foreground">{t('prediction.title')}</h3>
+          <p className="text-xs text-muted-foreground">{t('prediction.basedOn', { count: cyclesTracked })}</p>
         </div>
       </div>
 
@@ -112,27 +121,23 @@ export function CyclePrediction({ logs }: CyclePredictionProps) {
         <div className="bg-muted/50 rounded-xl p-3">
           <div className="flex items-center gap-2 mb-1">
             <Calendar className="w-4 h-4 text-primary" />
-            <span className="text-xs text-muted-foreground">Next Period</span>
+            <span className="text-xs text-muted-foreground">{t('prediction.nextPeriod')}</span>
           </div>
           <p className="font-semibold text-foreground">
             {format(nextPeriodDate, 'MMM d')}
           </p>
           <p className="text-xs text-muted-foreground">
-            {daysUntil <= 0 
-              ? daysUntil === 0 
-                ? 'Today!' 
-                : `${Math.abs(daysUntil)} days ago`
-              : `in ${daysUntil} days`}
+            {getDaysUntilText()}
           </p>
         </div>
 
         <div className="bg-muted/50 rounded-xl p-3">
           <div className="flex items-center gap-2 mb-1">
             <Clock className="w-4 h-4 text-accent" />
-            <span className="text-xs text-muted-foreground">Avg Cycle</span>
+            <span className="text-xs text-muted-foreground">{t('prediction.avgCycle')}</span>
           </div>
-          <p className="font-semibold text-foreground">{avgCycleLength} days</p>
-          <p className="text-xs text-muted-foreground">Your average</p>
+          <p className="font-semibold text-foreground">{t('prediction.days', { count: avgCycleLength })}</p>
+          <p className="text-xs text-muted-foreground">{t('prediction.yourAverage')}</p>
         </div>
       </div>
 
@@ -143,7 +148,9 @@ export function CyclePrediction({ logs }: CyclePredictionProps) {
           className="mt-3 p-2 rounded-lg bg-primary/10 text-center"
         >
           <p className="text-sm text-primary font-medium">
-            {daysUntil === 0 ? "Period expected today! 🌸" : `Period coming in ${daysUntil} day${daysUntil > 1 ? 's' : ''}! 🌸`}
+            {daysUntil === 0 
+              ? t('prediction.expectedToday') 
+              : t('prediction.comingIn', { count: daysUntil, s: daysUntil > 1 ? 's' : '' })}
           </p>
         </motion.div>
       )}
