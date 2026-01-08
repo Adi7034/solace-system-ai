@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { X, Droplets, Trash2 } from 'lucide-react';
 import { PeriodLog } from '@/hooks/usePeriodLogs';
+import { useTranslation } from '@/hooks/useTranslation';
 import { cn } from '@/lib/utils';
 
 interface LogEntryFormProps {
@@ -15,26 +16,28 @@ interface LogEntryFormProps {
   onClose: () => void;
 }
 
-const FLOW_OPTIONS = [
-  { value: 'spotting', label: 'Spotting', intensity: 1 },
-  { value: 'light', label: 'Light', intensity: 2 },
-  { value: 'medium', label: 'Medium', intensity: 3 },
-  { value: 'heavy', label: 'Heavy', intensity: 4 },
-] as const;
-
-const MOOD_OPTIONS = [
-  '😊 Happy', '😌 Calm', '😢 Sad', '😤 Irritable', 
-  '😰 Anxious', '😴 Tired', '🥰 Loving', '😔 Low',
-  '🤗 Grateful', '😵 Overwhelmed'
-];
-
-const SYMPTOM_OPTIONS = [
-  'Cramps', 'Headache', 'Bloating', 'Back pain',
-  'Breast tenderness', 'Fatigue', 'Nausea', 'Acne',
-  'Cravings', 'Insomnia', 'Hot flashes', 'Mood swings'
-];
-
 export function LogEntryForm({ date, existingLog, onSave, onDelete, onClose }: LogEntryFormProps) {
+  const { t } = useTranslation();
+
+  const FLOW_OPTIONS = [
+    { value: 'spotting', labelKey: 'form.spotting', intensity: 1 },
+    { value: 'light', labelKey: 'form.light', intensity: 2 },
+    { value: 'medium', labelKey: 'form.medium', intensity: 3 },
+    { value: 'heavy', labelKey: 'form.heavy', intensity: 4 },
+  ] as const;
+
+  const MOOD_OPTIONS = [
+    'mood.happy', 'mood.calm', 'mood.sad', 'mood.irritable', 
+    'mood.anxious', 'mood.tired', 'mood.loving', 'mood.low',
+    'mood.grateful', 'mood.overwhelmed'
+  ];
+
+  const SYMPTOM_OPTIONS = [
+    'symptom.cramps', 'symptom.headache', 'symptom.bloating', 'symptom.backPain',
+    'symptom.breastTenderness', 'symptom.fatigue', 'symptom.nausea', 'symptom.acne',
+    'symptom.cravings', 'symptom.insomnia', 'symptom.hotFlashes', 'symptom.moodSwings'
+  ];
+
   const [flow, setFlow] = useState<typeof FLOW_OPTIONS[number]['value'] | null>(
     existingLog?.flow_intensity || null
   );
@@ -81,7 +84,7 @@ export function LogEntryForm({ date, existingLog, onSave, onDelete, onClose }: L
       <div className="space-y-2">
         <label className="text-sm font-medium text-foreground flex items-center gap-2">
           <Droplets className="w-4 h-4 text-primary" />
-          Flow Intensity
+          {t('form.flowIntensity')}
         </label>
         <div className="flex gap-2">
           {FLOW_OPTIONS.map((option) => (
@@ -95,7 +98,7 @@ export function LogEntryForm({ date, existingLog, onSave, onDelete, onClose }: L
                   : "bg-muted text-muted-foreground hover:bg-muted/80"
               )}
             >
-              {option.label}
+              {t(option.labelKey)}
             </button>
           ))}
         </div>
@@ -103,53 +106,59 @@ export function LogEntryForm({ date, existingLog, onSave, onDelete, onClose }: L
 
       {/* Moods */}
       <div className="space-y-2">
-        <label className="text-sm font-medium text-foreground">How are you feeling?</label>
+        <label className="text-sm font-medium text-foreground">{t('form.howFeeling')}</label>
         <div className="flex flex-wrap gap-2">
-          {MOOD_OPTIONS.map((mood) => (
-            <button
-              key={mood}
-              onClick={() => toggleMood(mood)}
-              className={cn(
-                "px-3 py-1.5 rounded-full text-sm transition-all",
-                moods.includes(mood)
-                  ? "bg-accent text-accent-foreground shadow-sm"
-                  : "bg-muted/50 text-muted-foreground hover:bg-muted"
-              )}
-            >
-              {mood}
-            </button>
-          ))}
+          {MOOD_OPTIONS.map((moodKey) => {
+            const moodText = t(moodKey);
+            return (
+              <button
+                key={moodKey}
+                onClick={() => toggleMood(moodText)}
+                className={cn(
+                  "px-3 py-1.5 rounded-full text-sm transition-all",
+                  moods.includes(moodText)
+                    ? "bg-accent text-accent-foreground shadow-sm"
+                    : "bg-muted/50 text-muted-foreground hover:bg-muted"
+                )}
+              >
+                {moodText}
+              </button>
+            );
+          })}
         </div>
       </div>
 
       {/* Symptoms */}
       <div className="space-y-2">
-        <label className="text-sm font-medium text-foreground">Any symptoms?</label>
+        <label className="text-sm font-medium text-foreground">{t('form.anySymptoms')}</label>
         <div className="flex flex-wrap gap-2">
-          {SYMPTOM_OPTIONS.map((symptom) => (
-            <button
-              key={symptom}
-              onClick={() => toggleSymptom(symptom)}
-              className={cn(
-                "px-3 py-1.5 rounded-full text-sm transition-all",
-                symptoms.includes(symptom)
-                  ? "bg-secondary text-secondary-foreground shadow-sm"
-                  : "bg-muted/50 text-muted-foreground hover:bg-muted"
-              )}
-            >
-              {symptom}
-            </button>
-          ))}
+          {SYMPTOM_OPTIONS.map((symptomKey) => {
+            const symptomText = t(symptomKey);
+            return (
+              <button
+                key={symptomKey}
+                onClick={() => toggleSymptom(symptomText)}
+                className={cn(
+                  "px-3 py-1.5 rounded-full text-sm transition-all",
+                  symptoms.includes(symptomText)
+                    ? "bg-secondary text-secondary-foreground shadow-sm"
+                    : "bg-muted/50 text-muted-foreground hover:bg-muted"
+                )}
+              >
+                {symptomText}
+              </button>
+            );
+          })}
         </div>
       </div>
 
       {/* Notes */}
       <div className="space-y-2">
-        <label className="text-sm font-medium text-foreground">Notes</label>
+        <label className="text-sm font-medium text-foreground">{t('form.notes')}</label>
         <Textarea
           value={notes}
           onChange={(e) => setNotes(e.target.value)}
-          placeholder="How's your day going? Any thoughts to capture..."
+          placeholder={t('form.notesPlaceholder')}
           className="resize-none bg-muted/30"
           rows={3}
         />
@@ -163,7 +172,7 @@ export function LogEntryForm({ date, existingLog, onSave, onDelete, onClose }: L
           </Button>
         )}
         <Button onClick={handleSave} className="flex-1 bg-primary hover:bg-primary/90">
-          Save Entry 💜
+          {t('form.save')}
         </Button>
       </div>
     </motion.div>

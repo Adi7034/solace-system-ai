@@ -7,6 +7,8 @@ import { Droplets, Heart, Moon, ChevronLeft } from 'lucide-react';
 import { usePeriodLogs, PeriodLog } from '@/hooks/usePeriodLogs';
 import { LogEntryForm } from './LogEntryForm';
 import { CyclePrediction } from './CyclePrediction';
+import { LanguageSwitcher } from './LanguageSwitcher';
+import { useTranslation } from '@/hooks/useTranslation';
 import { cn } from '@/lib/utils';
 
 interface PeriodTrackerProps {
@@ -14,6 +16,7 @@ interface PeriodTrackerProps {
 }
 
 export function PeriodTracker({ onBack }: PeriodTrackerProps) {
+  const { t } = useTranslation();
   const { logs, isLoading, saveLog, deleteLog, getLogByDate } = usePeriodLogs();
   const [selectedDate, setSelectedDate] = useState<Date | undefined>(new Date());
   const [showForm, setShowForm] = useState(false);
@@ -68,19 +71,20 @@ export function PeriodTracker({ onBack }: PeriodTrackerProps) {
     >
       {/* Header */}
       <header className="sticky top-0 z-10 backdrop-blur-md bg-background/80 border-b border-border">
-        <div className="max-w-2xl mx-auto px-4 py-4 flex items-center gap-3">
-          <Button variant="ghost" size="icon" onClick={onBack}>
-            <ChevronLeft className="w-5 h-5" />
-          </Button>
+        <div className="max-w-2xl mx-auto px-4 py-4 flex items-center justify-between">
           <div className="flex items-center gap-3">
+            <Button variant="ghost" size="icon" onClick={onBack}>
+              <ChevronLeft className="w-5 h-5" />
+            </Button>
             <div className="w-10 h-10 rounded-full bg-gradient-to-br from-primary to-accent flex items-center justify-center shadow-lg">
               <Moon className="w-5 h-5 text-primary-foreground" />
             </div>
             <div>
-              <h1 className="font-semibold text-foreground">Period Tracker</h1>
-              <p className="text-xs text-muted-foreground">Track your cycle with care</p>
+              <h1 className="font-semibold text-foreground">{t('tracker.title')}</h1>
+              <p className="text-xs text-muted-foreground">{t('tracker.subtitle')}</p>
             </div>
           </div>
+          <LanguageSwitcher />
         </div>
       </header>
 
@@ -119,15 +123,15 @@ export function PeriodTracker({ onBack }: PeriodTrackerProps) {
           <div className="mt-4 flex flex-wrap gap-4 justify-center text-xs text-muted-foreground">
             <div className="flex items-center gap-1.5">
               <Droplets className="w-3.5 h-3.5 text-primary" />
-              <span>Flow</span>
+              <span>{t('tracker.flow')}</span>
             </div>
             <div className="flex items-center gap-1.5">
               <Heart className="w-3.5 h-3.5" style={{ color: 'hsl(280 40% 70%)' }} />
-              <span>Mood</span>
+              <span>{t('tracker.mood')}</span>
             </div>
             <div className="flex items-center gap-1.5">
               <span className="w-3.5 h-3.5 rounded-full" style={{ backgroundColor: 'hsl(150 30% 60%)' }} />
-              <span>Symptoms</span>
+              <span>{t('tracker.symptoms')}</span>
             </div>
           </div>
         </motion.div>
@@ -158,7 +162,7 @@ export function PeriodTracker({ onBack }: PeriodTrackerProps) {
             transition={{ delay: 0.1 }}
             className="space-y-3"
           >
-            <h3 className="font-medium text-foreground">Recent Logs</h3>
+            <h3 className="font-medium text-foreground">{t('tracker.recentLogs')}</h3>
             <div className="space-y-2">
               {logs.slice(0, 5).map((log) => (
                 <button
@@ -175,7 +179,7 @@ export function PeriodTracker({ onBack }: PeriodTrackerProps) {
                     </span>
                     {log.flow_intensity && (
                       <span className="text-xs px-2 py-0.5 rounded-full bg-primary/10 text-primary capitalize">
-                        {log.flow_intensity}
+                        {t(`form.${log.flow_intensity}`)}
                       </span>
                     )}
                   </div>
