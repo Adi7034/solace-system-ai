@@ -1,7 +1,7 @@
 import { useRef, useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { Sparkles, Calendar, LogOut } from 'lucide-react';
+import { Sparkles, Calendar, LogOut, Trash2 } from 'lucide-react';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Button } from '@/components/ui/button';
 import { ChatMessage } from '@/components/ChatMessage';
@@ -13,7 +13,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { toast } from 'sonner';
 
 const Index = () => {
-  const { messages, isLoading, sendMessage } = useChat();
+  const { messages, isLoading, isLoadingHistory, sendMessage, clearHistory } = useChat();
   const { user, isLoading: authLoading, signOut } = useAuth();
   const navigate = useNavigate();
   const scrollRef = useRef<HTMLDivElement>(null);
@@ -39,7 +39,7 @@ const Index = () => {
     navigate('/auth');
   };
 
-  if (authLoading) {
+  if (authLoading || isLoadingHistory) {
     return (
       <div className="min-h-screen bg-gradient-to-b from-rose-50 via-background to-purple-50 flex items-center justify-center">
         <div className="w-10 h-10 rounded-full bg-gradient-to-br from-primary to-accent flex items-center justify-center animate-pulse">
@@ -84,8 +84,18 @@ const Index = () => {
             <Button
               variant="ghost"
               size="sm"
+              onClick={clearHistory}
+              className="text-muted-foreground"
+              title="Clear chat"
+            >
+              <Trash2 className="w-4 h-4" />
+            </Button>
+            <Button
+              variant="ghost"
+              size="sm"
               onClick={handleSignOut}
               className="text-muted-foreground"
+              title="Sign out"
             >
               <LogOut className="w-4 h-4" />
             </Button>
