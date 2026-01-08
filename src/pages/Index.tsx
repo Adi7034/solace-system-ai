@@ -1,6 +1,7 @@
 import { useRef, useEffect, useState } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
-import { Sparkles, Calendar } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
+import { motion } from 'framer-motion';
+import { Sparkles, Calendar, LogOut } from 'lucide-react';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Button } from '@/components/ui/button';
 import { ChatMessage } from '@/components/ChatMessage';
@@ -8,11 +9,21 @@ import { ChatInput } from '@/components/ChatInput';
 import { QuickActions } from '@/components/QuickActions';
 import { PeriodTracker } from '@/components/PeriodTracker';
 import { useChat } from '@/hooks/useChat';
+import { useAuth } from '@/hooks/useAuth';
+import { toast } from 'sonner';
 
 const Index = () => {
   const { messages, isLoading, sendMessage } = useChat();
+  const { user, isLoading: authLoading, signOut } = useAuth();
+  const navigate = useNavigate();
   const scrollRef = useRef<HTMLDivElement>(null);
   const [showTracker, setShowTracker] = useState(false);
+
+  useEffect(() => {
+    if (!authLoading && !user) {
+      navigate('/auth');
+    }
+  }, [user, authLoading, navigate]);
 
   useEffect(() => {
     if (scrollRef.current) {
@@ -21,6 +32,22 @@ const Index = () => {
   }, [messages]);
 
   const showQuickActions = messages.length <= 1;
+
+  const handleSignOut = async () => {
+    await signOut();
+    toast.success('See you soon! 💜');
+    navigate('/auth');
+  };
+
+  if (authLoading) {
+    return (
+      <div className="min-h-screen bg-gradient-to-b from-rose-50 via-background to-purple-50 flex items-center justify-center">
+        <div className="w-10 h-10 rounded-full bg-gradient-to-br from-primary to-accent flex items-center justify-center animate-pulse">
+          <Sparkles className="w-5 h-5 text-primary-foreground" />
+        </div>
+      </div>
+    );
+  }
 
   if (showTracker) {
     return <PeriodTracker onBack={() => setShowTracker(false)} />;
@@ -44,15 +71,25 @@ const Index = () => {
               <p className="text-xs text-muted-foreground">Your bestie for wellness 💜</p>
             </div>
           </div>
-          <Button 
-            variant="outline" 
-            size="sm" 
-            onClick={() => setShowTracker(true)}
-            className="gap-2"
-          >
-            <Calendar className="w-4 h-4" />
-            <span className="hidden sm:inline">Cycle Tracker</span>
-          </Button>
+          <div className="flex items-center gap-2">
+            <Button 
+              variant="outline" 
+              size="sm" 
+              onClick={() => setShowTracker(true)}
+              className="gap-2"
+            >
+              <Calendar className="w-4 h-4" />
+              <span className="hidden sm:inline">Cycle Tracker</span>
+            </Button>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={handleSignOut}
+              className="text-muted-foreground"
+            >
+              <LogOut className="w-4 h-4" />
+            </Button>
+          </div>
         </div>
       </motion.header>
 
