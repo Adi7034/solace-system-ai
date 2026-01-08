@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
+import { useAuth } from './useAuth';
 
 export interface PeriodLog {
   id: string;
@@ -9,9 +10,11 @@ export interface PeriodLog {
   symptoms: string[];
   moods: string[];
   notes: string | null;
+  user_id?: string;
 }
 
 export function usePeriodLogs() {
+  const { user } = useAuth();
   const [logs, setLogs] = useState<PeriodLog[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
@@ -33,10 +36,17 @@ export function usePeriodLogs() {
   }, []);
 
   useEffect(() => {
-    fetchLogs();
-  }, [fetchLogs]);
+    if (user) {
+      fetchLogs();
+    }
+  }, [fetchLogs, user]);
 
   const saveLog = useCallback(async (log: Omit<PeriodLog, 'id'>) => {
+    if (!user) {
+      toast.error('Please sign in first');
+      return null;
+    }
+    
     try {
       const { data, error } = await supabase
         .from('period_logs')
@@ -46,9 +56,10 @@ export function usePeriodLogs() {
             flow_intensity: log.flow_intensity,
             symptoms: log.symptoms,
             moods: log.moods,
-            notes: log.notes
+            notes: log.notes,
+            user_id: user.id
           },
-          { onConflict: 'log_date' }
+          { onConflict: 'log_date,user_id', ignoreDuplicates: false }
         )
         .select()
         .single();
@@ -70,7 +81,7 @@ export function usePeriodLogs() {
       toast.error('Failed to save log');
       return null;
     }
-  }, []);
+  }, [user]);
 
   const deleteLog = useCallback(async (date: string) => {
     try {
