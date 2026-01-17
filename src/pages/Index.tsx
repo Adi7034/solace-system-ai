@@ -1,7 +1,7 @@
 import { useRef, useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { Sparkles, Calendar, LogOut, Trash2 } from 'lucide-react';
+import { Calendar, LogOut, Trash2 } from 'lucide-react';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Button } from '@/components/ui/button';
 import { ChatMessage } from '@/components/ChatMessage';
@@ -13,6 +13,7 @@ import { useChat } from '@/hooks/useChat';
 import { useAuth } from '@/hooks/useAuth';
 import { useTranslation } from '@/hooks/useTranslation';
 import { toast } from 'sonner';
+import logo from '@/assets/logo.ico';
 
 const Index = () => {
   const { t } = useTranslation();
@@ -45,9 +46,11 @@ const Index = () => {
   if (authLoading || isLoadingHistory) {
     return (
       <div className="min-h-screen bg-gradient-to-b from-rose-50 via-background to-purple-50 flex items-center justify-center">
-        <div className="w-10 h-10 rounded-full bg-gradient-to-br from-primary to-accent flex items-center justify-center animate-pulse">
-          <Sparkles className="w-5 h-5 text-primary-foreground" />
-        </div>
+        <img 
+          src={logo} 
+          alt="MindPhase-M Logo" 
+          className="w-10 h-10 rounded-full shadow-lg animate-pulse"
+        />
       </div>
     );
   }
@@ -66,9 +69,11 @@ const Index = () => {
       >
         <div className="max-w-2xl mx-auto px-4 py-4 flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-full bg-gradient-to-br from-primary to-accent flex items-center justify-center shadow-lg">
-              <Sparkles className="w-5 h-5 text-primary-foreground" />
-            </div>
+            <img 
+              src={logo} 
+              alt="MindPhase-M Logo" 
+              className="w-10 h-10 rounded-full shadow-lg"
+            />
             <div>
               <h1 className="font-semibold text-foreground">{t('app.name')}</h1>
               <p className="text-xs text-muted-foreground">{t('app.tagline')}</p>
@@ -120,9 +125,11 @@ const Index = () => {
                 animate={{ opacity: 1 }}
                 className="flex gap-3"
               >
-                <div className="w-9 h-9 rounded-full bg-gradient-to-br from-rose-400 to-purple-500 flex items-center justify-center">
-                  <Sparkles className="w-4 h-4 text-white" />
-                </div>
+                <img 
+                  src={logo} 
+                  alt="MindPhase-M" 
+                  className="w-9 h-9 rounded-full"
+                />
                 <div className="bg-card border border-border rounded-2xl rounded-bl-md px-4 py-3">
                   <div className="flex gap-1">
                     <span className="w-2 h-2 bg-rose-400 rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />
