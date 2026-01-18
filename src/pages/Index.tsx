@@ -1,7 +1,7 @@
 import { useRef, useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { Calendar, LogOut, Trash2, Heart } from 'lucide-react';
+import { Calendar, LogOut, Trash2, Heart, BookOpen } from 'lucide-react';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Button } from '@/components/ui/button';
 import { ChatMessage } from '@/components/ChatMessage';
@@ -9,6 +9,7 @@ import { ChatInput } from '@/components/ChatInput';
 import { QuickActions } from '@/components/QuickActions';
 import { PeriodTracker } from '@/components/PeriodTracker';
 import { MoodJournal } from '@/components/MoodJournal';
+import { ResourcesPage } from '@/components/ResourcesPage';
 import { LanguageSwitcher } from '@/components/LanguageSwitcher';
 import { useChat } from '@/hooks/useChat';
 import { useAuth } from '@/hooks/useAuth';
@@ -16,7 +17,7 @@ import { useTranslation } from '@/hooks/useTranslation';
 import { toast } from 'sonner';
 import logo from '@/assets/logo.ico';
 
-type ViewMode = 'chat' | 'tracker' | 'mood';
+type ViewMode = 'chat' | 'tracker' | 'mood' | 'resources';
 
 const Index = () => {
   const { t } = useTranslation();
@@ -66,6 +67,10 @@ const Index = () => {
     return <MoodJournal onBack={() => setViewMode('chat')} />;
   }
 
+  if (viewMode === 'resources') {
+    return <ResourcesPage onBack={() => setViewMode('chat')} />;
+  }
+
   return (
     <div className="min-h-screen bg-gradient-to-b from-rose-50 via-background to-purple-50">
       {/* Header */}
@@ -88,6 +93,15 @@ const Index = () => {
           </div>
           <div className="flex items-center gap-1">
             <LanguageSwitcher />
+            <Button 
+              variant="outline" 
+              size="sm" 
+              onClick={() => setViewMode('resources')}
+              className="gap-2"
+            >
+              <BookOpen className="w-4 h-4" />
+              <span className="hidden sm:inline">{t('nav.resources')}</span>
+            </Button>
             <Button 
               variant="outline" 
               size="sm" 
