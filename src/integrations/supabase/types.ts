@@ -38,6 +38,45 @@ export type Database = {
         }
         Relationships: []
       }
+      mood_entries: {
+        Row: {
+          created_at: string
+          energy_level: number | null
+          entry_date: string
+          id: string
+          mood_label: string
+          mood_score: number
+          notes: string | null
+          sleep_quality: number | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          energy_level?: number | null
+          entry_date: string
+          id?: string
+          mood_label: string
+          mood_score: number
+          notes?: string | null
+          sleep_quality?: number | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          energy_level?: number | null
+          entry_date?: string
+          id?: string
+          mood_label?: string
+          mood_score?: number
+          notes?: string | null
+          sleep_quality?: number | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       period_logs: {
         Row: {
           created_at: string
