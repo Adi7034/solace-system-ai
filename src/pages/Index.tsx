@@ -1,13 +1,14 @@
 import { useRef, useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { Calendar, LogOut, Trash2 } from 'lucide-react';
+import { Calendar, LogOut, Trash2, Heart } from 'lucide-react';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Button } from '@/components/ui/button';
 import { ChatMessage } from '@/components/ChatMessage';
 import { ChatInput } from '@/components/ChatInput';
 import { QuickActions } from '@/components/QuickActions';
 import { PeriodTracker } from '@/components/PeriodTracker';
+import { MoodJournal } from '@/components/MoodJournal';
 import { LanguageSwitcher } from '@/components/LanguageSwitcher';
 import { useChat } from '@/hooks/useChat';
 import { useAuth } from '@/hooks/useAuth';
@@ -15,13 +16,15 @@ import { useTranslation } from '@/hooks/useTranslation';
 import { toast } from 'sonner';
 import logo from '@/assets/logo.ico';
 
+type ViewMode = 'chat' | 'tracker' | 'mood';
+
 const Index = () => {
   const { t } = useTranslation();
   const { messages, isLoading, isLoadingHistory, sendMessage, clearHistory } = useChat();
   const { user, isLoading: authLoading, signOut } = useAuth();
   const navigate = useNavigate();
   const scrollRef = useRef<HTMLDivElement>(null);
-  const [showTracker, setShowTracker] = useState(false);
+  const [viewMode, setViewMode] = useState<ViewMode>('chat');
 
   useEffect(() => {
     if (!authLoading && !user) {
@@ -55,8 +58,12 @@ const Index = () => {
     );
   }
 
-  if (showTracker) {
-    return <PeriodTracker onBack={() => setShowTracker(false)} />;
+  if (viewMode === 'tracker') {
+    return <PeriodTracker onBack={() => setViewMode('chat')} />;
+  }
+
+  if (viewMode === 'mood') {
+    return <MoodJournal onBack={() => setViewMode('chat')} />;
   }
 
   return (
@@ -84,7 +91,16 @@ const Index = () => {
             <Button 
               variant="outline" 
               size="sm" 
-              onClick={() => setShowTracker(true)}
+              onClick={() => setViewMode('mood')}
+              className="gap-2"
+            >
+              <Heart className="w-4 h-4" />
+              <span className="hidden sm:inline">{t('nav.moodJournal')}</span>
+            </Button>
+            <Button 
+              variant="outline" 
+              size="sm" 
+              onClick={() => setViewMode('tracker')}
               className="gap-2"
             >
               <Calendar className="w-4 h-4" />
