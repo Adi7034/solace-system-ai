@@ -217,8 +217,8 @@ export function CyclePrediction({ logs }: CyclePredictionProps) {
               </PopoverTrigger>
               <PopoverContent className="w-auto p-0" align="start">
                 <div className="p-3 border-b border-border">
-                  <p className="text-sm font-medium">Adjust predicted date</p>
-                  <p className="text-xs text-muted-foreground">If your cycle varies, update here</p>
+                  <p className="text-sm font-medium">{t('prediction.adjustDate')}</p>
+                  <p className="text-xs text-muted-foreground">{t('prediction.cycleVaries')}</p>
                 </div>
                 <CalendarPicker
                   mode="single"
@@ -230,14 +230,14 @@ export function CyclePrediction({ logs }: CyclePredictionProps) {
                 <div className="p-3 border-t border-border flex gap-2 justify-end">
                   {customNextDate && (
                     <Button size="sm" variant="ghost" onClick={handleResetToCalculated}>
-                      Reset
+                      {t('prediction.reset')}
                     </Button>
                   )}
                   <Button size="sm" variant="ghost" onClick={() => setIsEditingDate(false)}>
-                    <X className="w-3 h-3 mr-1" /> Cancel
+                    <X className="w-3 h-3 mr-1" /> {t('prediction.cancel')}
                   </Button>
                   <Button size="sm" onClick={handleSaveCustomDate}>
-                    <Check className="w-3 h-3 mr-1" /> Save
+                    <Check className="w-3 h-3 mr-1" /> {t('prediction.save')}
                   </Button>
                 </div>
               </PopoverContent>
@@ -253,7 +253,7 @@ export function CyclePrediction({ logs }: CyclePredictionProps) {
               </p>
               {customNextDate && (
                 <span className="absolute top-2 right-2 text-[10px] px-1.5 py-0.5 rounded bg-accent/50 text-accent-foreground">
-                  Custom
+                  {t('prediction.custom')}
                 </span>
               )}
             </>
@@ -287,20 +287,20 @@ export function CyclePrediction({ logs }: CyclePredictionProps) {
               <div>
                 <p className="font-medium text-sm text-foreground">
                   {irregularityMessage === 'high' 
-                    ? 'Irregular Cycle Detected' 
+                    ? t('prediction.irregularHigh')
                     : irregularityMessage === 'recent'
-                    ? 'Recent Cycle Changes'
-                    : 'Cycle Variations Noticed'}
+                    ? t('prediction.irregularRecent')
+                    : t('prediction.irregularModerate')}
                 </p>
                 <p className="text-xs text-muted-foreground mt-1">
                   {irregularityMessage === 'high' 
-                    ? "Your cycle lengths vary significantly. This is common, but if you're concerned, consider talking to a healthcare provider. 💜"
+                    ? t('prediction.irregularHighDesc')
                     : irregularityMessage === 'recent'
-                    ? "Your recent cycles have been different from usual. Stress, diet, or lifestyle changes can affect this."
-                    : "Some variation in your cycle is normal. Keep tracking to better predict your next period."}
+                    ? t('prediction.irregularRecentDesc')
+                    : t('prediction.irregularModerateDesc')}
                 </p>
                 <p className="text-xs text-primary mt-2">
-                  💡 Tip: Use the edit button to manually adjust your expected date
+                  {t('prediction.editTip')}
                 </p>
               </div>
             </div>
@@ -326,7 +326,7 @@ export function CyclePrediction({ logs }: CyclePredictionProps) {
       {/* Cycle History (if enough data) */}
       {prediction.cycleLengths.length >= 2 && (
         <div className="pt-2 border-t border-border">
-          <p className="text-xs text-muted-foreground mb-2">Recent cycle lengths:</p>
+          <p className="text-xs text-muted-foreground mb-2">{t('prediction.recentCycleLengths')}</p>
           <div className="flex gap-2 flex-wrap">
             {prediction.cycleLengths.slice(-5).map((length, i) => (
               <span 
@@ -338,7 +338,7 @@ export function CyclePrediction({ logs }: CyclePredictionProps) {
                     : "bg-muted text-muted-foreground"
                 )}
               >
-                {length} days
+                {t('prediction.daysLabel', { count: length })}
               </span>
             ))}
           </div>
