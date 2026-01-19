@@ -1,7 +1,7 @@
 import { useRef, useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { motion } from 'framer-motion';
-import { Calendar, LogOut, Trash2, Heart, BookOpen } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { Calendar, LogOut, Trash2, Heart, BookOpen, Plus, X } from 'lucide-react';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Button } from '@/components/ui/button';
 import { ChatMessage } from '@/components/ChatMessage';
@@ -26,6 +26,7 @@ const Index = () => {
   const navigate = useNavigate();
   const scrollRef = useRef<HTMLDivElement>(null);
   const [viewMode, setViewMode] = useState<ViewMode>('chat');
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
 
   useEffect(() => {
     if (!authLoading && !user) {
@@ -80,6 +81,7 @@ const Index = () => {
         className="sticky top-0 z-10 backdrop-blur-md bg-background/80 border-b border-border"
       >
         <div className="max-w-2xl mx-auto px-4 py-4 flex items-center justify-between">
+          {/* Logo and Name - Centered */}
           <div className="flex items-center gap-3">
             <img 
               src={logo} 
@@ -87,30 +89,14 @@ const Index = () => {
               className="w-10 h-10 rounded-full shadow-lg"
             />
             <div>
-              <h1 className="font-semibold text-foreground">{t('app.name')}</h1>
+              <h1 className="font-semibold text-foreground text-lg">{t('app.name')}</h1>
               <p className="text-xs text-muted-foreground">{t('app.tagline')}</p>
             </div>
           </div>
+          
+          {/* Right side actions */}
           <div className="flex items-center gap-1">
             <LanguageSwitcher />
-            <Button 
-              variant="outline" 
-              size="sm" 
-              onClick={() => setViewMode('resources')}
-              className="gap-2"
-            >
-              <BookOpen className="w-4 h-4" />
-              <span className="hidden sm:inline">{t('nav.resources')}</span>
-            </Button>
-            <Button 
-              variant="outline" 
-              size="sm" 
-              onClick={() => setViewMode('mood')}
-              className="gap-2"
-            >
-              <Heart className="w-4 h-4" />
-              <span className="hidden sm:inline">{t('nav.moodJournal')}</span>
-            </Button>
             <Button 
               variant="outline" 
               size="sm" 
@@ -187,6 +173,67 @@ const Index = () => {
         <div className="sticky bottom-0 px-4 py-4 bg-gradient-to-t from-background via-background to-transparent">
           <ChatInput onSend={sendMessage} isLoading={isLoading} />
         </div>
+      </div>
+
+      {/* Floating Menu - Bottom Left */}
+      <div className="fixed bottom-6 left-6 z-50">
+        <AnimatePresence>
+          {isMenuOpen && (
+            <motion.div
+              initial={{ opacity: 0, y: 20, scale: 0.8 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              exit={{ opacity: 0, y: 20, scale: 0.8 }}
+              className="absolute bottom-16 left-0 flex flex-col gap-3"
+            >
+              <motion.div
+                initial={{ opacity: 0, x: -20 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ delay: 0.1 }}
+              >
+                <Button
+                  onClick={() => {
+                    setViewMode('resources');
+                    setIsMenuOpen(false);
+                  }}
+                  className="gap-2 shadow-lg bg-primary hover:bg-primary/90"
+                >
+                  <BookOpen className="w-4 h-4" />
+                  {t('nav.resources')}
+                </Button>
+              </motion.div>
+              <motion.div
+                initial={{ opacity: 0, x: -20 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ delay: 0.05 }}
+              >
+                <Button
+                  onClick={() => {
+                    setViewMode('mood');
+                    setIsMenuOpen(false);
+                  }}
+                  className="gap-2 shadow-lg bg-primary hover:bg-primary/90"
+                >
+                  <Heart className="w-4 h-4" />
+                  {t('nav.moodJournal')}
+                </Button>
+              </motion.div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+
+        <motion.button
+          whileHover={{ scale: 1.1 }}
+          whileTap={{ scale: 0.95 }}
+          onClick={() => setIsMenuOpen(!isMenuOpen)}
+          className="w-14 h-14 rounded-full bg-primary text-primary-foreground shadow-lg flex items-center justify-center hover:bg-primary/90 transition-colors"
+        >
+          <motion.div
+            animate={{ rotate: isMenuOpen ? 45 : 0 }}
+            transition={{ duration: 0.2 }}
+          >
+            {isMenuOpen ? <X className="w-6 h-6" /> : <Plus className="w-6 h-6" />}
+          </motion.div>
+        </motion.button>
       </div>
     </div>
   );
