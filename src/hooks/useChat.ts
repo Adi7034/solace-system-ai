@@ -24,6 +24,7 @@ export function useChat() {
   const [messages, setMessages] = useState<Message[]>([WELCOME_MESSAGE]);
   const [isLoading, setIsLoading] = useState(false);
   const [isLoadingHistory, setIsLoadingHistory] = useState(true);
+  const [currentConversationId, setCurrentConversationId] = useState<string | null>(null);
 
   // Load chat history on mount
   useEffect(() => {
@@ -34,23 +35,38 @@ export function useChat() {
 
     const loadHistory = async () => {
       try {
-        const { data, error } = await supabase
-          .from('chat_messages')
-          .select('*')
+        // Get latest conversation or load orphan messages
+        const { data: conversations } = await supabase
+          .from('conversations')
+          .select('id')
           .eq('user_id', user.id)
-          .order('created_at', { ascending: true })
-          .limit(50);
+          .order('updated_at', { ascending: false })
+          .limit(1);
 
-        if (error) throw error;
+        if (conversations && conversations.length > 0) {
+          setCurrentConversationId(conversations[0].id);
+          await loadConversationMessages(conversations[0].id);
+        } else {
+          // Load any orphan messages (messages without conversation_id)
+          const { data, error } = await supabase
+            .from('chat_messages')
+            .select('*')
+            .eq('user_id', user.id)
+            .is('conversation_id', null)
+            .order('created_at', { ascending: true })
+            .limit(50);
 
-        if (data && data.length > 0) {
-          const loadedMessages: Message[] = data.map(m => ({
-            id: m.id,
-            role: m.role as 'user' | 'assistant',
-            content: m.content,
-            timestamp: new Date(m.created_at),
-          }));
-          setMessages([WELCOME_MESSAGE, ...loadedMessages]);
+          if (error) throw error;
+
+          if (data && data.length > 0) {
+            const loadedMessages: Message[] = data.map(m => ({
+              id: m.id,
+              role: m.role as 'user' | 'assistant',
+              content: m.content,
+              timestamp: new Date(m.created_at),
+            }));
+            setMessages([WELCOME_MESSAGE, ...loadedMessages]);
+          }
         }
       } catch (error) {
         console.error('Error loading chat history:', error);
@@ -62,22 +78,121 @@ export function useChat() {
     loadHistory();
   }, [user]);
 
+  const loadConversationMessages = async (conversationId: string) => {
+    if (!user) return;
+    
+    try {
+      const { data, error } = await supabase
+        .from('chat_messages')
+        .select('*')
+        .eq('conversation_id', conversationId)
+        .order('created_at', { ascending: true })
+        .limit(50);
+
+      if (error) throw error;
+
+      if (data && data.length > 0) {
+        const loadedMessages: Message[] = data.map(m => ({
+          id: m.id,
+          role: m.role as 'user' | 'assistant',
+          content: m.content,
+          timestamp: new Date(m.created_at),
+        }));
+        setMessages([WELCOME_MESSAGE, ...loadedMessages]);
+      } else {
+        setMessages([WELCOME_MESSAGE]);
+      }
+    } catch (error) {
+      console.error('Error loading conversation messages:', error);
+    }
+  };
+
+  const switchConversation = useCallback(async (conversationId: string | null) => {
+    if (!user) return;
+    
+    setIsLoadingHistory(true);
+    
+    if (conversationId === null) {
+      // Start a new conversation
+      setCurrentConversationId(null);
+      setMessages([WELCOME_MESSAGE]);
+    } else {
+      setCurrentConversationId(conversationId);
+      await loadConversationMessages(conversationId);
+    }
+    
+    setIsLoadingHistory(false);
+  }, [user]);
+
+  // Create or get conversation
+  const ensureConversation = useCallback(async (firstMessage: string): Promise<string | null> => {
+    if (!user) return null;
+    
+    if (currentConversationId) return currentConversationId;
+    
+    try {
+      // Create a new conversation with title from first message
+      const title = firstMessage.slice(0, 50) + (firstMessage.length > 50 ? '...' : '');
+      const { data, error } = await supabase
+        .from('conversations')
+        .insert({ user_id: user.id, title })
+        .select()
+        .single();
+
+      if (error) throw error;
+      setCurrentConversationId(data.id);
+      return data.id;
+    } catch (error) {
+      console.error('Error creating conversation:', error);
+      return null;
+    }
+  }, [user, currentConversationId]);
+
   // Save message to database
-  const saveMessage = useCallback(async (role: 'user' | 'assistant', content: string) => {
+  const saveMessage = useCallback(async (role: 'user' | 'assistant', content: string, conversationId: string | null) => {
     if (!user) return null;
 
     try {
       const { data, error } = await supabase
         .from('chat_messages')
-        .insert({ user_id: user.id, role, content })
+        .insert({ user_id: user.id, role, content, conversation_id: conversationId })
         .select()
         .single();
 
       if (error) throw error;
+      
+      // Update conversation updated_at
+      if (conversationId) {
+        await supabase
+          .from('conversations')
+          .update({ updated_at: new Date().toISOString() })
+          .eq('id', conversationId);
+      }
+      
       return data;
     } catch (error) {
       console.error('Error saving message:', error);
       return null;
+    }
+  }, [user]);
+
+  // Delete a specific message
+  const deleteMessage = useCallback(async (messageId: string) => {
+    if (!user) return;
+
+    // Remove from local state
+    setMessages(prev => prev.filter(m => m.id !== messageId));
+
+    // Delete from database if it's a saved message
+    if (!messageId.startsWith('user-') && !messageId.startsWith('assistant-') && messageId !== 'welcome') {
+      try {
+        await supabase
+          .from('chat_messages')
+          .delete()
+          .eq('id', messageId);
+      } catch (error) {
+        console.error('Error deleting message:', error);
+      }
     }
   }, [user]);
 
@@ -94,8 +209,11 @@ export function useChat() {
     setMessages(prev => [...prev, userMessage]);
     setIsLoading(true);
 
+    // Ensure we have a conversation
+    const conversationId = await ensureConversation(input.trim());
+
     // Save user message
-    const savedUserMsg = await saveMessage('user', input.trim());
+    const savedUserMsg = await saveMessage('user', input.trim(), conversationId);
     if (savedUserMsg) {
       userMessage.id = savedUserMsg.id;
     }
@@ -193,7 +311,7 @@ export function useChat() {
 
       // Save assistant message after streaming completes
       if (assistantContent) {
-        const savedAssistantMsg = await saveMessage('assistant', assistantContent);
+        const savedAssistantMsg = await saveMessage('assistant', assistantContent, conversationId);
         if (savedAssistantMsg) {
           setMessages(prev => 
             prev.map(m => m.id === assistantId ? { ...m, id: savedAssistantMsg.id } : m)
@@ -355,7 +473,7 @@ export function useChat() {
 
       // Save assistant message after streaming completes
       if (assistantContent) {
-        const savedAssistantMsg = await saveMessage('assistant', assistantContent);
+        const savedAssistantMsg = await saveMessage('assistant', assistantContent, currentConversationId);
         if (savedAssistantMsg) {
           setMessages(prev => 
             prev.map(m => m.id === assistantId ? { ...m, id: savedAssistantMsg.id } : m)
@@ -375,20 +493,39 @@ export function useChat() {
     if (!user) return;
 
     try {
-      const { error } = await supabase
-        .from('chat_messages')
-        .delete()
-        .eq('user_id', user.id);
-
-      if (error) throw error;
+      // Delete current conversation if exists
+      if (currentConversationId) {
+        await supabase
+          .from('conversations')
+          .delete()
+          .eq('id', currentConversationId);
+      } else {
+        // Delete orphan messages
+        await supabase
+          .from('chat_messages')
+          .delete()
+          .eq('user_id', user.id)
+          .is('conversation_id', null);
+      }
       
+      setCurrentConversationId(null);
       setMessages([WELCOME_MESSAGE]);
       toast.success('Chat history cleared 💜');
     } catch (error) {
       console.error('Error clearing history:', error);
       toast.error('Could not clear history');
     }
-  }, [user]);
+  }, [user, currentConversationId]);
 
-  return { messages, isLoading, isLoadingHistory, sendMessage, editMessage, clearHistory };
+  return { 
+    messages, 
+    isLoading, 
+    isLoadingHistory, 
+    sendMessage, 
+    editMessage, 
+    clearHistory, 
+    deleteMessage,
+    switchConversation,
+    currentConversationId
+  };
 }

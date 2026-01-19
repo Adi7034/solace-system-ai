@@ -1,7 +1,7 @@
 import { useRef, useEffect, useState, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Calendar, LogOut, Trash2, Heart, BookOpen, Plus, X } from 'lucide-react';
+import { Calendar, LogOut, Trash2, Heart, BookOpen, Plus, X, History } from 'lucide-react';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Button } from '@/components/ui/button';
 import { ChatMessage } from '@/components/ChatMessage';
@@ -12,6 +12,7 @@ import { MoodJournal } from '@/components/MoodJournal';
 import { ResourcesPage } from '@/components/ResourcesPage';
 import { LanguageSwitcher } from '@/components/LanguageSwitcher';
 import { GoodbyeDialog } from '@/components/GoodbyeDialog';
+import { ChatHistory } from '@/components/ChatHistory';
 import { useChat } from '@/hooks/useChat';
 import { useAuth } from '@/hooks/useAuth';
 import { useTranslation } from '@/hooks/useTranslation';
@@ -38,7 +39,7 @@ const GOODBYE_PHRASES = [
 
 const Index = () => {
   const { t } = useTranslation();
-  const { messages, isLoading, isLoadingHistory, sendMessage, editMessage, clearHistory } = useChat();
+  const { messages, isLoading, isLoadingHistory, sendMessage, editMessage, clearHistory, deleteMessage, switchConversation, currentConversationId } = useChat();
   const { user, isLoading: authLoading, signOut } = useAuth();
   const navigate = useNavigate();
   const scrollRef = useRef<HTMLDivElement>(null);
@@ -46,6 +47,8 @@ const Index = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [showGoodbyeDialog, setShowGoodbyeDialog] = useState(false);
   const [pendingMessage, setPendingMessage] = useState<string | null>(null);
+  const [pendingMessageId, setPendingMessageId] = useState<string | null>(null);
+  const [showChatHistory, setShowChatHistory] = useState(false);
 
   // Detect goodbye phrases in user message
   const isGoodbyeMessage = useCallback((message: string) => {
@@ -54,23 +57,34 @@ const Index = () => {
   }, []);
 
   // Handle message sending with goodbye detection
-  const handleSendMessage = useCallback((message: string) => {
+  const handleSendMessage = useCallback(async (message: string) => {
     if (isGoodbyeMessage(message)) {
-      setPendingMessage(message);
-      setShowGoodbyeDialog(true);
+      // Send the message first, then show dialog
+      await sendMessage(message);
+      // Find the last user message ID
+      setTimeout(() => {
+        const lastUserMsg = messages.filter(m => m.role === 'user').pop();
+        if (lastUserMsg) {
+          setPendingMessageId(lastUserMsg.id);
+        }
+        setPendingMessage(message);
+        setShowGoodbyeDialog(true);
+      }, 100);
     } else {
       sendMessage(message);
     }
-  }, [isGoodbyeMessage, sendMessage]);
+  }, [isGoodbyeMessage, sendMessage, messages]);
 
-  // Continue chatting after goodbye
+  // Continue chatting after goodbye - remove the goodbye message
   const handleContinue = useCallback(() => {
     setShowGoodbyeDialog(false);
-    if (pendingMessage) {
-      sendMessage(pendingMessage);
-      setPendingMessage(null);
+    // Delete the pending goodbye message if exists
+    if (pendingMessageId) {
+      deleteMessage(pendingMessageId);
     }
-  }, [pendingMessage, sendMessage]);
+    setPendingMessage(null);
+    setPendingMessageId(null);
+  }, [pendingMessageId, deleteMessage]);
 
   // Get a random farewell message based on conversation tone
   const getRandomFarewellMessage = useCallback(() => {
@@ -91,6 +105,7 @@ const Index = () => {
   const handleExit = useCallback(async () => {
     setShowGoodbyeDialog(false);
     setPendingMessage(null);
+    setPendingMessageId(null);
     const farewellMessage = getRandomFarewellMessage();
     toast.success(farewellMessage, { duration: 5000 });
     await clearHistory();
@@ -256,6 +271,22 @@ const Index = () => {
               <motion.div
                 initial={{ opacity: 0, x: -20 }}
                 animate={{ opacity: 1, x: 0 }}
+                transition={{ delay: 0.15 }}
+              >
+                <Button
+                  onClick={() => {
+                    setShowChatHistory(true);
+                    setIsMenuOpen(false);
+                  }}
+                  className="gap-2 shadow-lg bg-primary hover:bg-primary/90"
+                >
+                  <History className="w-4 h-4" />
+                  {t('chatHistory.title')}
+                </Button>
+              </motion.div>
+              <motion.div
+                initial={{ opacity: 0, x: -20 }}
+                animate={{ opacity: 1, x: 0 }}
                 transition={{ delay: 0.1 }}
               >
                 <Button
@@ -303,6 +334,14 @@ const Index = () => {
           </motion.div>
         </motion.button>
       </div>
+
+      {/* Chat History Sidebar */}
+      <ChatHistory
+        open={showChatHistory}
+        onClose={() => setShowChatHistory(false)}
+        onSelectConversation={switchConversation}
+        currentConversationId={currentConversationId}
+      />
 
       {/* Goodbye Confirmation Dialog */}
       <GoodbyeDialog
