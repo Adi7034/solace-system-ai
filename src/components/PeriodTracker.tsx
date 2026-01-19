@@ -1,5 +1,5 @@
-import { useState } from 'react';
-import { format, parseISO } from 'date-fns';
+import { useState, useMemo } from 'react';
+import { format, parseISO, addDays, differenceInDays } from 'date-fns';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Calendar } from '@/components/ui/calendar';
 import { Button } from '@/components/ui/button';
@@ -7,6 +7,7 @@ import { Droplets, Heart, Moon, ChevronLeft } from 'lucide-react';
 import { usePeriodLogs, PeriodLog } from '@/hooks/usePeriodLogs';
 import { LogEntryForm } from './LogEntryForm';
 import { CyclePrediction } from './CyclePrediction';
+import { PeriodReminder } from './PeriodReminder';
 import { LanguageSwitcher } from './LanguageSwitcher';
 import { useTranslation } from '@/hooks/useTranslation';
 import { cn } from '@/lib/utils';
@@ -24,6 +25,59 @@ export function PeriodTracker({ onBack }: PeriodTrackerProps) {
   const selectedLog = selectedDate 
     ? getLogByDate(format(selectedDate, 'yyyy-MM-dd')) 
     : undefined;
+
+  // Calculate next period date for reminders
+  const nextPeriodDate = useMemo(() => {
+    const periodLogs = logs
+      .filter(l => l.flow_intensity && l.flow_intensity !== 'spotting')
+      .sort((a, b) => new Date(a.log_date).getTime() - new Date(b.log_date).getTime());
+
+    if (periodLogs.length < 1) return null;
+
+    // Find period start dates
+    const periodStarts: Date[] = [];
+    let lastDate: Date | null = null;
+
+    for (const log of periodLogs) {
+      const logDate = parseISO(log.log_date);
+      if (!lastDate || differenceInDays(logDate, lastDate) > 5) {
+        periodStarts.push(logDate);
+      }
+      lastDate = logDate;
+    }
+
+    if (periodStarts.length === 0) return null;
+
+    // Calculate average cycle length
+    const cycleLengths: number[] = [];
+    for (let i = 1; i < periodStarts.length; i++) {
+      const length = differenceInDays(periodStarts[i], periodStarts[i - 1]);
+      if (length >= 15 && length <= 60) {
+        cycleLengths.push(length);
+      }
+    }
+
+    const avgCycleLength = cycleLengths.length > 0
+      ? Math.round(cycleLengths.reduce((a, b) => a + b, 0) / cycleLengths.length)
+      : 28;
+
+    const lastPeriodStart = periodStarts[periodStarts.length - 1];
+    
+    // Check localStorage for custom date
+    const saved = localStorage.getItem('mindphase_custom_prediction');
+    if (saved) {
+      try {
+        const parsed = JSON.parse(saved);
+        if (parsed.date) {
+          return new Date(parsed.date);
+        }
+      } catch (e) {
+        console.error('Error parsing saved prediction:', e);
+      }
+    }
+    
+    return addDays(lastPeriodStart, avgCycleLength);
+  }, [logs]);
 
   const handleSave = async (log: Omit<PeriodLog, 'id'>) => {
     await saveLog(log);
@@ -138,7 +192,10 @@ export function PeriodTracker({ onBack }: PeriodTrackerProps) {
 
         {/* Cycle Prediction */}
         {!showForm && (
-          <CyclePrediction logs={logs} />
+          <>
+            <CyclePrediction logs={logs} />
+            <PeriodReminder nextPeriodDate={nextPeriodDate} />
+          </>
         )}
 
         {/* Selected Date Info */}
