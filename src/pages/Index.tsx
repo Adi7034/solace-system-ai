@@ -23,7 +23,9 @@ type ViewMode = 'chat' | 'tracker' | 'mood' | 'resources';
 
 // Goodbye phrases to detect (supports multiple languages)
 const GOODBYE_PHRASES = [
-  // English
+  // English - simple thanks
+  'thank you', 'thanks', 'thankyou', 'ty', 'thx',
+  // English - goodbye variations
   'goodbye', 'good bye', 'bye', 'thanks for helping', 'thank you for helping',
   'thanks for your help', 'thank you for your help', 'see you', 'take care',
   'gotta go', 'have to go', 'need to go', 'leaving now', 'bye bye',
