@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { Mail, Lock, ArrowRight, ArrowLeft } from 'lucide-react';
+import { Mail, Lock, ArrowRight, ArrowLeft, User } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -11,6 +11,14 @@ import { useTranslation } from '@/hooks/useTranslation';
 import { LanguageSwitcher } from '@/components/LanguageSwitcher';
 import { z } from 'zod';
 import logo from '@/assets/logo.ico';
+import { supabase } from '@/integrations/supabase/client';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 
 const Auth = () => {
   const { t } = useTranslation();
@@ -18,6 +26,7 @@ const Auth = () => {
   const [showForgotPassword, setShowForgotPassword] = useState(false);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [gender, setGender] = useState<string>('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const { signIn, signUp, resetPassword } = useAuth();
   const navigate = useNavigate();
@@ -33,6 +42,12 @@ const Auth = () => {
     const validation = authSchema.safeParse({ email, password });
     if (!validation.success) {
       toast.error(validation.error.errors[0].message);
+      return;
+    }
+
+    // Validate gender for signup
+    if (!isLogin && !gender) {
+      toast.error('Please select your gender');
       return;
     }
 
@@ -52,7 +67,7 @@ const Auth = () => {
         toast.success(t('auth.welcomeBack'));
         navigate('/');
       } else {
-        const { error } = await signUp(email, password);
+        const { data, error } = await signUp(email, password);
         if (error) {
           if (error.message.includes('already registered')) {
             toast.error(t('auth.alreadyRegistered'));
@@ -61,6 +76,22 @@ const Auth = () => {
           }
           return;
         }
+
+        // Create profile with gender after successful signup
+        if (data.user) {
+          const { error: profileError } = await supabase
+            .from('profiles')
+            .insert({
+              user_id: data.user.id,
+              gender: gender,
+            });
+
+          if (profileError) {
+            console.error('Error creating profile:', profileError);
+            // Don't block signup if profile creation fails
+          }
+        }
+
         toast.success(t('auth.accountCreated'));
         navigate('/');
       }
@@ -245,7 +276,27 @@ const Auth = () => {
               </div>
             </div>
 
-            <Button 
+            {!isLogin && (
+              <div className="space-y-2">
+                <Label htmlFor="gender">{t('auth.gender') || 'Gender'}</Label>
+                <div className="relative">
+                  <User className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground z-10" />
+                  <Select value={gender} onValueChange={setGender}>
+                    <SelectTrigger className="pl-10">
+                      <SelectValue placeholder={t('auth.selectGender') || 'Select your gender'} />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="female">{t('auth.female') || 'Female'}</SelectItem>
+                      <SelectItem value="male">{t('auth.male') || 'Male'}</SelectItem>
+                      <SelectItem value="other">{t('auth.other') || 'Other'}</SelectItem>
+                      <SelectItem value="prefer_not_to_say">{t('auth.preferNotToSay') || 'Prefer not to say'}</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+            )}
+
+            <Button
               type="submit" 
               className="w-full gap-2"
               disabled={isSubmitting}
