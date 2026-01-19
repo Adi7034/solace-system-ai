@@ -311,6 +311,36 @@ const translations = {
     ml: 'ഈ ഇമെയിൽ ഇതിനകം രജിസ്റ്റർ ചെയ്തിട്ടുണ്ട്. ലോഗിൻ ചെയ്യൂ!',
     hi: 'यह ईमेल पहले से रजिस्टर है। लॉगिन करें!',
   },
+  'auth.gender': {
+    en: 'Gender',
+    ml: 'ലിംഗം',
+    hi: 'लिंग',
+  },
+  'auth.selectGender': {
+    en: 'Select your gender',
+    ml: 'നിങ്ങളുടെ ലിംഗം തിരഞ്ഞെടുക്കുക',
+    hi: 'अपना लिंग चुनें',
+  },
+  'auth.female': {
+    en: 'Female',
+    ml: 'സ്ത്രീ',
+    hi: 'महिला',
+  },
+  'auth.male': {
+    en: 'Male',
+    ml: 'പുരുഷൻ',
+    hi: 'पुरुष',
+  },
+  'auth.other': {
+    en: 'Other',
+    ml: 'മറ്റുള്ളവ',
+    hi: 'अन्य',
+  },
+  'auth.preferNotToSay': {
+    en: 'Prefer not to say',
+    ml: 'പറയാൻ താൽപ്പര്യമില്ല',
+    hi: 'बताना नहीं चाहते',
+  },
 
   // Symptoms (keeping English as they are medical terms, but adding translations)
   'symptom.cramps': { en: 'Cramps', ml: 'ക്രാമ്പ്സ്', hi: 'ऐंठन' },
