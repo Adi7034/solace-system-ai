@@ -210,29 +210,166 @@ export function useChat() {
   }, [messages, isLoading, saveMessage]);
 
   const editMessage = useCallback(async (messageId: string, newContent: string) => {
-    if (!user) return;
+    if (!user || isLoading) return;
 
-    // Update local state
-    setMessages(prev => prev.map(m => 
+    // Find the index of the message being edited
+    const messageIndex = messages.findIndex(m => m.id === messageId);
+    if (messageIndex === -1) return;
+
+    // Get all messages after the edited one (to delete)
+    const messagesToDelete = messages.slice(messageIndex + 1);
+    
+    // Keep only messages up to and including the edited message (with new content)
+    const updatedMessages = messages.slice(0, messageIndex + 1).map(m =>
       m.id === messageId ? { ...m, content: newContent } : m
-    ));
+    );
+    
+    setMessages(updatedMessages);
 
-    // Update in database if it's a saved message
-    if (!messageId.startsWith('user-') && !messageId.startsWith('assistant-')) {
+    // Delete messages after the edited one from database
+    const idsToDelete = messagesToDelete
+      .filter(m => !m.id.startsWith('user-') && !m.id.startsWith('assistant-') && m.id !== 'welcome')
+      .map(m => m.id);
+
+    if (idsToDelete.length > 0) {
+      try {
+        const { error } = await supabase
+          .from('chat_messages')
+          .delete()
+          .in('id', idsToDelete);
+
+        if (error) console.error('Error deleting messages:', error);
+      } catch (error) {
+        console.error('Error deleting messages:', error);
+      }
+    }
+
+    // Update the edited message in database
+    if (!messageId.startsWith('user-') && !messageId.startsWith('assistant-') && messageId !== 'welcome') {
       try {
         const { error } = await supabase
           .from('chat_messages')
           .update({ content: newContent })
           .eq('id', messageId);
 
-        if (error) throw error;
-        toast.success('Message updated 💜');
+        if (error) console.error('Error updating message:', error);
       } catch (error) {
         console.error('Error updating message:', error);
-        toast.error('Could not update message');
       }
     }
-  }, [user]);
+
+    // Now send the edited message to get a fresh AI response
+    setIsLoading(true);
+
+    let assistantContent = '';
+    const assistantId = `assistant-${Date.now()}`;
+
+    const updateAssistant = (chunk: string) => {
+      assistantContent += chunk;
+      setMessages(prev => {
+        const last = prev[prev.length - 1];
+        if (last?.role === 'assistant' && last.id === assistantId) {
+          return prev.map((m, i) =>
+            i === prev.length - 1 ? { ...m, content: assistantContent } : m
+          );
+        }
+        return [
+          ...prev,
+          { id: assistantId, role: 'assistant' as const, content: assistantContent, timestamp: new Date() },
+        ];
+      });
+    };
+
+    try {
+      // Build messages for AI (exclude welcome message)
+      const chatMessages = updatedMessages.filter(m => m.id !== 'welcome').map(m => ({
+        role: m.role,
+        content: m.content,
+      }));
+
+      const resp = await fetch(CHAT_URL, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
+        },
+        body: JSON.stringify({ messages: chatMessages }),
+      });
+
+      if (!resp.ok) {
+        const errorData = await resp.json().catch(() => ({}));
+        throw new Error(errorData.error || 'Failed to get response');
+      }
+
+      if (!resp.body) throw new Error('No response body');
+
+      const reader = resp.body.getReader();
+      const decoder = new TextDecoder();
+      let buffer = '';
+
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+
+        buffer += decoder.decode(value, { stream: true });
+
+        let newlineIndex: number;
+        while ((newlineIndex = buffer.indexOf('\n')) !== -1) {
+          let line = buffer.slice(0, newlineIndex);
+          buffer = buffer.slice(newlineIndex + 1);
+
+          if (line.endsWith('\r')) line = line.slice(0, -1);
+          if (line.startsWith(':') || line.trim() === '') continue;
+          if (!line.startsWith('data: ')) continue;
+
+          const jsonStr = line.slice(6).trim();
+          if (jsonStr === '[DONE]') break;
+
+          try {
+            const parsed = JSON.parse(jsonStr);
+            const content = parsed.choices?.[0]?.delta?.content;
+            if (content) updateAssistant(content);
+          } catch {
+            buffer = line + '\n' + buffer;
+            break;
+          }
+        }
+      }
+
+      // Final flush
+      if (buffer.trim()) {
+        for (let raw of buffer.split('\n')) {
+          if (!raw) continue;
+          if (raw.endsWith('\r')) raw = raw.slice(0, -1);
+          if (raw.startsWith(':') || raw.trim() === '') continue;
+          if (!raw.startsWith('data: ')) continue;
+          const jsonStr = raw.slice(6).trim();
+          if (jsonStr === '[DONE]') continue;
+          try {
+            const parsed = JSON.parse(jsonStr);
+            const content = parsed.choices?.[0]?.delta?.content;
+            if (content) updateAssistant(content);
+          } catch {}
+        }
+      }
+
+      // Save assistant message after streaming completes
+      if (assistantContent) {
+        const savedAssistantMsg = await saveMessage('assistant', assistantContent);
+        if (savedAssistantMsg) {
+          setMessages(prev => 
+            prev.map(m => m.id === assistantId ? { ...m, id: savedAssistantMsg.id } : m)
+          );
+        }
+      }
+    } catch (error) {
+      console.error('Chat error:', error);
+      toast.error(error instanceof Error ? error.message : 'Something went wrong');
+      setMessages(prev => prev.filter(m => m.id !== assistantId));
+    } finally {
+      setIsLoading(false);
+    }
+  }, [user, messages, isLoading, saveMessage]);
 
   const clearHistory = useCallback(async () => {
     if (!user) return;
