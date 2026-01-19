@@ -1,4 +1,4 @@
-import { useRef, useEffect, useState } from 'react';
+import { useRef, useEffect, useState, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Calendar, LogOut, Trash2, Heart, BookOpen, Plus, X } from 'lucide-react';
@@ -11,6 +11,7 @@ import { PeriodTracker } from '@/components/PeriodTracker';
 import { MoodJournal } from '@/components/MoodJournal';
 import { ResourcesPage } from '@/components/ResourcesPage';
 import { LanguageSwitcher } from '@/components/LanguageSwitcher';
+import { GoodbyeDialog } from '@/components/GoodbyeDialog';
 import { useChat } from '@/hooks/useChat';
 import { useAuth } from '@/hooks/useAuth';
 import { useTranslation } from '@/hooks/useTranslation';
@@ -18,6 +19,18 @@ import { toast } from 'sonner';
 import logo from '@/assets/logo.ico';
 
 type ViewMode = 'chat' | 'tracker' | 'mood' | 'resources';
+
+// Goodbye phrases to detect (supports multiple languages)
+const GOODBYE_PHRASES = [
+  // English
+  'goodbye', 'good bye', 'bye', 'thanks for helping', 'thank you for helping',
+  'thanks for your help', 'thank you for your help', 'see you', 'take care',
+  'gotta go', 'have to go', 'need to go', 'leaving now', 'bye bye',
+  // Malayalam
+  'നന്ദി', 'വിട', 'പോകുന്നു',
+  // Hindi
+  'धन्यवाद', 'अलविदा', 'शुक्रिया',
+];
 
 const Index = () => {
   const { t } = useTranslation();
@@ -27,6 +40,41 @@ const Index = () => {
   const scrollRef = useRef<HTMLDivElement>(null);
   const [viewMode, setViewMode] = useState<ViewMode>('chat');
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [showGoodbyeDialog, setShowGoodbyeDialog] = useState(false);
+  const [pendingMessage, setPendingMessage] = useState<string | null>(null);
+
+  // Detect goodbye phrases in user message
+  const isGoodbyeMessage = useCallback((message: string) => {
+    const lowerMessage = message.toLowerCase().trim();
+    return GOODBYE_PHRASES.some(phrase => lowerMessage.includes(phrase.toLowerCase()));
+  }, []);
+
+  // Handle message sending with goodbye detection
+  const handleSendMessage = useCallback((message: string) => {
+    if (isGoodbyeMessage(message)) {
+      setPendingMessage(message);
+      setShowGoodbyeDialog(true);
+    } else {
+      sendMessage(message);
+    }
+  }, [isGoodbyeMessage, sendMessage]);
+
+  // Continue chatting after goodbye
+  const handleContinue = useCallback(() => {
+    setShowGoodbyeDialog(false);
+    if (pendingMessage) {
+      sendMessage(pendingMessage);
+      setPendingMessage(null);
+    }
+  }, [pendingMessage, sendMessage]);
+
+  // Exit chat after goodbye
+  const handleExit = useCallback(async () => {
+    setShowGoodbyeDialog(false);
+    setPendingMessage(null);
+    toast.success(t('goodbye.exitMessage'));
+    await clearHistory();
+  }, [clearHistory, t]);
 
   useEffect(() => {
     if (!authLoading && !user) {
@@ -165,13 +213,13 @@ const Index = () => {
             animate={{ opacity: 1, y: 0 }}
             className="px-4 pb-4"
           >
-            <QuickActions onSelect={sendMessage} disabled={isLoading} />
+            <QuickActions onSelect={handleSendMessage} disabled={isLoading} />
           </motion.div>
         )}
 
         {/* Input Area */}
         <div className="sticky bottom-0 px-4 py-4 bg-gradient-to-t from-background via-background to-transparent">
-          <ChatInput onSend={sendMessage} isLoading={isLoading} />
+          <ChatInput onSend={handleSendMessage} isLoading={isLoading} />
         </div>
       </div>
 
@@ -235,6 +283,13 @@ const Index = () => {
           </motion.div>
         </motion.button>
       </div>
+
+      {/* Goodbye Confirmation Dialog */}
+      <GoodbyeDialog
+        open={showGoodbyeDialog}
+        onContinue={handleContinue}
+        onExit={handleExit}
+      />
     </div>
   );
 };
