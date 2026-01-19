@@ -39,7 +39,7 @@ const GOODBYE_PHRASES = [
 
 const Index = () => {
   const { t } = useTranslation();
-  const { messages, isLoading, isLoadingHistory, sendMessage, editMessage, clearHistory, deleteMessage, switchConversation, currentConversationId } = useChat();
+  const { messages, isLoading, isLoadingHistory, sendMessage, editMessage, clearHistory, switchConversation, currentConversationId } = useChat();
   const { user, isLoading: authLoading, signOut } = useAuth();
   const navigate = useNavigate();
   const scrollRef = useRef<HTMLDivElement>(null);
@@ -47,7 +47,6 @@ const Index = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [showGoodbyeDialog, setShowGoodbyeDialog] = useState(false);
   const [pendingMessage, setPendingMessage] = useState<string | null>(null);
-  const [pendingMessageId, setPendingMessageId] = useState<string | null>(null);
   const [showChatHistory, setShowChatHistory] = useState(false);
 
   // Detect goodbye phrases in user message
@@ -59,32 +58,20 @@ const Index = () => {
   // Handle message sending with goodbye detection
   const handleSendMessage = useCallback(async (message: string) => {
     if (isGoodbyeMessage(message)) {
-      // Send the message first, then show dialog
-      await sendMessage(message);
-      // Find the last user message ID
-      setTimeout(() => {
-        const lastUserMsg = messages.filter(m => m.role === 'user').pop();
-        if (lastUserMsg) {
-          setPendingMessageId(lastUserMsg.id);
-        }
-        setPendingMessage(message);
-        setShowGoodbyeDialog(true);
-      }, 100);
+      // Show dialog first, don't send the message yet
+      setPendingMessage(message);
+      setShowGoodbyeDialog(true);
     } else {
       sendMessage(message);
     }
-  }, [isGoodbyeMessage, sendMessage, messages]);
+  }, [isGoodbyeMessage, sendMessage]);
 
-  // Continue chatting after goodbye - remove the goodbye message
+  // Continue chatting after goodbye - don't send the goodbye message
   const handleContinue = useCallback(() => {
     setShowGoodbyeDialog(false);
-    // Delete the pending goodbye message if exists
-    if (pendingMessageId) {
-      deleteMessage(pendingMessageId);
-    }
     setPendingMessage(null);
-    setPendingMessageId(null);
-  }, [pendingMessageId, deleteMessage]);
+    // Simply don't send the goodbye message - it was never sent
+  }, []);
 
   // Get a random farewell message based on conversation tone
   const getRandomFarewellMessage = useCallback(() => {
@@ -105,7 +92,6 @@ const Index = () => {
   const handleExit = useCallback(async () => {
     setShowGoodbyeDialog(false);
     setPendingMessage(null);
-    setPendingMessageId(null);
     const farewellMessage = getRandomFarewellMessage();
     toast.success(farewellMessage, { duration: 5000 });
     await clearHistory();
