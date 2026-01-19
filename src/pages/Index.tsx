@@ -26,10 +26,14 @@ const GOODBYE_PHRASES = [
   'goodbye', 'good bye', 'bye', 'thanks for helping', 'thank you for helping',
   'thanks for your help', 'thank you for your help', 'see you', 'take care',
   'gotta go', 'have to go', 'need to go', 'leaving now', 'bye bye',
+  'thank you so much', 'thanks a lot', 'i appreciate it', 'that was helpful',
+  'you helped me', 'feeling better now', 'i feel better', 'got to go',
+  'time to go', 'im leaving', "i'm leaving", 'talk later', 'catch you later',
+  'until next time', 'good night', 'goodnight', 'sweet dreams',
   // Malayalam
-  'നന്ദി', 'വിട', 'പോകുന്നു',
+  'നന്ദി', 'വിട', 'പോകുന്നു', 'സഹായിച്ചതിന് നന്ദി', 'വീണ്ടും കാണാം',
   // Hindi
-  'धन्यवाद', 'अलविदा', 'शुक्रिया',
+  'धन्यवाद', 'अलविदा', 'शुक्रिया', 'मदद के लिए शुक्रिया', 'फिर मिलेंगे',
 ];
 
 const Index = () => {
@@ -68,13 +72,29 @@ const Index = () => {
     }
   }, [pendingMessage, sendMessage]);
 
+  // Get a random farewell message based on conversation tone
+  const getRandomFarewellMessage = useCallback(() => {
+    const farewellMessages = [
+      t('goodbye.farewell1'),
+      t('goodbye.farewell2'),
+      t('goodbye.farewell3'),
+      t('goodbye.farewell4'),
+      t('goodbye.farewell5'),
+      t('goodbye.farewell6'),
+      t('goodbye.farewell7'),
+      t('goodbye.farewell8'),
+    ];
+    return farewellMessages[Math.floor(Math.random() * farewellMessages.length)];
+  }, [t]);
+
   // Exit chat after goodbye
   const handleExit = useCallback(async () => {
     setShowGoodbyeDialog(false);
     setPendingMessage(null);
-    toast.success(t('goodbye.exitMessage'));
+    const farewellMessage = getRandomFarewellMessage();
+    toast.success(farewellMessage, { duration: 5000 });
     await clearHistory();
-  }, [clearHistory, t]);
+  }, [clearHistory, getRandomFarewellMessage]);
 
   useEffect(() => {
     if (!authLoading && !user) {
