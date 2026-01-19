@@ -209,6 +209,31 @@ export function useChat() {
     }
   }, [messages, isLoading, saveMessage]);
 
+  const editMessage = useCallback(async (messageId: string, newContent: string) => {
+    if (!user) return;
+
+    // Update local state
+    setMessages(prev => prev.map(m => 
+      m.id === messageId ? { ...m, content: newContent } : m
+    ));
+
+    // Update in database if it's a saved message
+    if (!messageId.startsWith('user-') && !messageId.startsWith('assistant-')) {
+      try {
+        const { error } = await supabase
+          .from('chat_messages')
+          .update({ content: newContent })
+          .eq('id', messageId);
+
+        if (error) throw error;
+        toast.success('Message updated 💜');
+      } catch (error) {
+        console.error('Error updating message:', error);
+        toast.error('Could not update message');
+      }
+    }
+  }, [user]);
+
   const clearHistory = useCallback(async () => {
     if (!user) return;
 
@@ -228,5 +253,5 @@ export function useChat() {
     }
   }, [user]);
 
-  return { messages, isLoading, isLoadingHistory, sendMessage, clearHistory };
+  return { messages, isLoading, isLoadingHistory, sendMessage, editMessage, clearHistory };
 }

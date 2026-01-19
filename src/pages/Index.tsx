@@ -21,7 +21,7 @@ type ViewMode = 'chat' | 'tracker' | 'mood' | 'resources';
 
 const Index = () => {
   const { t } = useTranslation();
-  const { messages, isLoading, isLoadingHistory, sendMessage, clearHistory } = useChat();
+  const { messages, isLoading, isLoadingHistory, sendMessage, editMessage, clearHistory } = useChat();
   const { user, isLoading: authLoading, signOut } = useAuth();
   const navigate = useNavigate();
   const scrollRef = useRef<HTMLDivElement>(null);
@@ -133,7 +133,7 @@ const Index = () => {
         <ScrollArea className="flex-1 px-4 py-6" ref={scrollRef}>
           <div className="space-y-4">
             {messages.map((message) => (
-              <ChatMessage key={message.id} message={message} />
+              <ChatMessage key={message.id} message={message} onEdit={editMessage} />
             ))}
             {isLoading && messages[messages.length - 1]?.role === 'user' && (
               <motion.div
