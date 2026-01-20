@@ -27,6 +27,34 @@ export function useChat() {
   const [currentConversationId, setCurrentConversationId] = useState<string | null>(null);
   const [historyLoaded, setHistoryLoaded] = useState(false);
 
+  // Helper function to load messages for a conversation
+  const loadConversationMessages = useCallback(async (conversationId: string) => {
+    try {
+      const { data, error } = await supabase
+        .from('chat_messages')
+        .select('*')
+        .eq('conversation_id', conversationId)
+        .order('created_at', { ascending: true })
+        .limit(50);
+
+      if (error) throw error;
+
+      if (data && data.length > 0) {
+        const loadedMessages: Message[] = data.map(m => ({
+          id: m.id,
+          role: m.role as 'user' | 'assistant',
+          content: m.content,
+          timestamp: new Date(m.created_at),
+        }));
+        setMessages([WELCOME_MESSAGE, ...loadedMessages]);
+      } else {
+        setMessages([WELCOME_MESSAGE]);
+      }
+    } catch (error) {
+      console.error('Error loading conversation messages:', error);
+    }
+  }, []);
+
   // Load chat history when auth is ready and user exists
   useEffect(() => {
     // Wait for auth to finish loading
@@ -99,36 +127,7 @@ export function useChat() {
     };
 
     loadHistory();
-  }, [user, isAuthLoading, historyLoaded]);
-
-  const loadConversationMessages = async (conversationId: string) => {
-    if (!user) return;
-    
-    try {
-      const { data, error } = await supabase
-        .from('chat_messages')
-        .select('*')
-        .eq('conversation_id', conversationId)
-        .order('created_at', { ascending: true })
-        .limit(50);
-
-      if (error) throw error;
-
-      if (data && data.length > 0) {
-        const loadedMessages: Message[] = data.map(m => ({
-          id: m.id,
-          role: m.role as 'user' | 'assistant',
-          content: m.content,
-          timestamp: new Date(m.created_at),
-        }));
-        setMessages([WELCOME_MESSAGE, ...loadedMessages]);
-      } else {
-        setMessages([WELCOME_MESSAGE]);
-      }
-    } catch (error) {
-      console.error('Error loading conversation messages:', error);
-    }
-  };
+  }, [user, isAuthLoading, historyLoaded, loadConversationMessages]);
 
   const switchConversation = useCallback(async (conversationId: string | null) => {
     if (!user) return;
