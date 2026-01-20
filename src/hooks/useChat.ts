@@ -20,28 +20,49 @@ const WELCOME_MESSAGE: Message = {
 };
 
 export function useChat() {
-  const { user } = useAuth();
+  const { user, isLoading: isAuthLoading } = useAuth();
   const [messages, setMessages] = useState<Message[]>([WELCOME_MESSAGE]);
   const [isLoading, setIsLoading] = useState(false);
   const [isLoadingHistory, setIsLoadingHistory] = useState(true);
   const [currentConversationId, setCurrentConversationId] = useState<string | null>(null);
+  const [historyLoaded, setHistoryLoaded] = useState(false);
 
-  // Load chat history on mount
+  // Load chat history when auth is ready and user exists
   useEffect(() => {
+    // Wait for auth to finish loading
+    if (isAuthLoading) {
+      return;
+    }
+
+    // If no user after auth loaded, stop loading history
     if (!user) {
       setIsLoadingHistory(false);
       return;
     }
 
+    // Prevent loading history multiple times
+    if (historyLoaded) {
+      return;
+    }
+
     const loadHistory = async () => {
       try {
+        console.log('Loading chat history for user:', user.id);
+        
         // Get latest conversation or load orphan messages
-        const { data: conversations } = await supabase
+        const { data: conversations, error: convError } = await supabase
           .from('conversations')
           .select('id')
           .eq('user_id', user.id)
           .order('updated_at', { ascending: false })
           .limit(1);
+
+        if (convError) {
+          console.error('Error fetching conversations:', convError);
+          throw convError;
+        }
+
+        console.log('Found conversations:', conversations?.length || 0);
 
         if (conversations && conversations.length > 0) {
           setCurrentConversationId(conversations[0].id);
@@ -68,6 +89,8 @@ export function useChat() {
             setMessages([WELCOME_MESSAGE, ...loadedMessages]);
           }
         }
+        
+        setHistoryLoaded(true);
       } catch (error) {
         console.error('Error loading chat history:', error);
       } finally {
@@ -76,7 +99,7 @@ export function useChat() {
     };
 
     loadHistory();
-  }, [user]);
+  }, [user, isAuthLoading, historyLoaded]);
 
   const loadConversationMessages = async (conversationId: string) => {
     if (!user) return;
