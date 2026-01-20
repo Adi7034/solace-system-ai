@@ -73,6 +73,36 @@ export type Database = {
         }
         Relationships: []
       }
+      event_memory: {
+        Row: {
+          context: string | null
+          created_at: string
+          event_summary: string
+          event_type: string
+          id: string
+          importance_score: number | null
+          user_id: string
+        }
+        Insert: {
+          context?: string | null
+          created_at?: string
+          event_summary: string
+          event_type: string
+          id?: string
+          importance_score?: number | null
+          user_id: string
+        }
+        Update: {
+          context?: string | null
+          created_at?: string
+          event_summary?: string
+          event_type?: string
+          id?: string
+          importance_score?: number | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       mood_entries: {
         Row: {
           created_at: string
@@ -170,6 +200,33 @@ export type Database = {
           display_name?: string | null
           gender?: string
           id?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      slot_memory: {
+        Row: {
+          created_at: string
+          id: string
+          slot_key: string
+          slot_value: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          slot_key: string
+          slot_value: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          slot_key?: string
+          slot_value?: string
           updated_at?: string
           user_id?: string
         }
